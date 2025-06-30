@@ -8,9 +8,11 @@ interface MapNodeProps {
     node: Node;
     onClick: (node: Node) => void;
     onDrag: (nodeId: string, position: { x: number, y: number }) => void;
+    isLinkingFrom?: boolean;
+    isLinkingActive?: boolean;
 }
 
-export const MapNode = ({ node, onClick, onDrag }: MapNodeProps) => {
+export const MapNode = ({ node, onClick, onDrag, isLinkingFrom = false, isLinkingActive = false }: MapNodeProps) => {
     const [isDragging, setIsDragging] = useState(false);
     const dragStartPos = React.useRef({ x: 0, y: 0 });
     const nodeStartPos = React.useRef({ x: 0, y: 0 });
@@ -54,17 +56,23 @@ export const MapNode = ({ node, onClick, onDrag }: MapNodeProps) => {
             document.removeEventListener('mouseup', handleMouseUp);
         }
     }, [isDragging, handleMouseMove, handleMouseUp]);
+    
+    const cursorStyle = isDragging ? 'grabbing' : (isLinkingActive ? 'crosshair' : 'grab');
 
     return (
         <div
             className={cn(
-                "absolute transition-shadow duration-200",
-                isDragging ? 'shadow-2xl scale-105 z-20' : 'z-10'
+                "absolute transition-shadow duration-200 rounded-lg",
+                isDragging ? 'shadow-2xl scale-105 z-40' : 'z-10',
+                isLinkingFrom && 'ring-2 ring-accent ring-offset-2 ring-offset-background'
             )}
-            style={{ left: node.position.x, top: node.position.y, cursor: isDragging ? 'grabbing' : 'grab' }}
+            style={{ left: node.position.x, top: node.position.y, cursor: cursorStyle }}
             onMouseDown={handleMouseDown}
         >
-            <Card className="w-64 bg-card shadow-lg border-2 border-primary/50 hover:border-primary transition-colors duration-200">
+            <Card className={cn(
+                "w-64 bg-card shadow-lg border-2 border-primary/50 hover:border-primary transition-colors duration-200",
+                isLinkingFrom && "border-accent"
+            )}>
                 <CardHeader className="p-4">
                     <CardTitle className="text-base truncate">{node.title}</CardTitle>
                 </CardHeader>
