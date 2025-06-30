@@ -1,21 +1,17 @@
-'use client';
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { MapCanvas } from '@/components/maps/map-canvas';
+import { getMap } from '@/services/map-service';
+import { notFound } from 'next/navigation';
 
-function MapEditorContent() {
-    const searchParams = useSearchParams();
-    const mapName = searchParams.get('name') || 'Untitled Map';
+export default async function MapEditorPage({ params }: { params: { mapId: string } }) {
+    const map = await getMap(params.mapId);
 
-    return <MapCanvas mapName={mapName} />;
-}
-
-export default function MapEditorPage() {
+    if (!map) {
+        notFound();
+    }
+    
     return (
         <div className="w-full h-[calc(100vh-120px)] flex flex-col">
-            <Suspense fallback={<div>Loading...</div>}>
-                <MapEditorContent />
-            </Suspense>
+           <MapCanvas map={map} />
         </div>
     );
 }

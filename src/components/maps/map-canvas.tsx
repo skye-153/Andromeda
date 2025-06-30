@@ -2,19 +2,21 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { type Node, type Connection } from '@/lib/types';
+import { type Node, type Connection, type MapData } from '@/lib/types';
+import { updateMap } from '@/services/map-service';
 import { MapNode } from './map-node';
 import { NodeEditor } from './node-editor';
 import { MapConnections } from './map-connections';
-import { Plus, Save, Link2, Link2Off } from 'lucide-react';
+import { Plus, Save, Link2, Link2Off, Loader2 } from 'lucide-react';
 
-export function MapCanvas({ mapName }: { mapName: string }) {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
+export function MapCanvas({ map }: { map: MapData }) {
+  const [nodes, setNodes] = useState<Node[]>(map.nodes);
+  const [connections, setConnections] = useState<Connection[]>(map.connections);
   const [linkingState, setLinkingState] = useState<{ active: boolean; from: string | null }>({ active: false, from: null });
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isEditorOpen, setEditorOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState<{ x: number, y: number } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -130,11 +132,24 @@ export function MapCanvas({ mapName }: { mapName: string }) {
   }, []);
 
   const handleSaveMap = () => {
-    console.log("Saving map:", { name: mapName, nodes, connections });
-    toast({
-      title: "Map Saved!",
-      description: `Your map "${mapName}" has been saved successfully.`,
-    });
+    setIsSaving(true);
+    updateMap({ id: map.id, nodes, connections })
+      .then(() => {
+        toast({
+          title: "Map Saved!",
+          description: `Your map "${map.name}" has been saved successfully.`,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: 'Error saving map',
+          description: 'Could not save the map. Please try again.',
+          variant: 'destructive',
+        });
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
 
   return (
@@ -147,8 +162,13 @@ export function MapCanvas({ mapName }: { mapName: string }) {
           {linkingState.active ? <Link2Off className="mr-2 h-4 w-4" /> : <Link2 className="mr-2 h-4 w-4" />}
           {linkingState.active ? "Cancel Linking" : "Link Nodes"}
         </Button>
-        <Button variant="outline" onClick={handleSaveMap}>
-          <Save className="mr-2 h-4 w-4" /> Save Map
+        <Button variant="outline" onClick={handleSaveMap} disabled={isSaving}>
+          {isSaving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {isSaving ? 'Saving...' : 'Save Map'}
         </Button>
       </div>
 

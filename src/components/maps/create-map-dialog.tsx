@@ -12,21 +12,25 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 interface CreateMapDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onCreate: (name: string) => void;
+  onCreate: (name: string) => Promise<void>;
 }
 
 export function CreateMapDialog({ isOpen, onOpenChange, onCreate }: CreateMapDialogProps) {
   const [name, setName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreate = () => {
-    if (name.trim()) {
-      onCreate(name.trim());
+  const handleCreate = async () => {
+    if (name.trim() && !isCreating) {
+      setIsCreating(true);
+      await onCreate(name.trim());
       setName('');
       onOpenChange(false);
+      setIsCreating(false);
     }
   };
   
@@ -43,7 +47,7 @@ export function CreateMapDialog({ isOpen, onOpenChange, onCreate }: CreateMapDia
         <DialogHeader>
           <DialogTitle>Create New Map</DialogTitle>
           <DialogDescription>
-            Give your new cosmic creation a name. You can change this later.
+            Give your new cosmic creation a name. This will take you to the editor.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
@@ -63,7 +67,10 @@ export function CreateMapDialog({ isOpen, onOpenChange, onCreate }: CreateMapDia
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Create</Button>
+            <Button type="submit" disabled={isCreating || !name.trim()}>
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isCreating ? 'Creating...' : 'Create and Open'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
