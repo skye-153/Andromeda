@@ -47,7 +47,7 @@ export function CreateMapDialog({ isOpen, onOpenChange, onCreate }: CreateMapDia
         <DialogHeader>
           <DialogTitle>Create New Map</DialogTitle>
           <DialogDescription>
-            Give your new cosmic creation a name. This will take you to the editor.
+            Give your new map a name. This will take you to the editor.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>

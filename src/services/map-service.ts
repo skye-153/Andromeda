@@ -6,10 +6,10 @@ import { MapData, Node, Connection } from '@/lib/types';
 let maps: MapData[] = [
     {
         id: '1',
-        name: 'My First Map',
+        name: 'Getting Started',
         nodes: [
-            { id: 'node-1', title: 'Welcome!', description: 'This is your first node.', position: { x: 100, y: 100 }, links: [], files: [], isDone: false },
-            { id: 'node-2', title: 'Get Started', description: 'Add more nodes to build your map.', position: { x: 400, y: 250 }, links: [], files: [], isDone: true },
+            { id: 'node-1', title: 'Welcome to Idea Map!', description: 'This is your first node. You can edit it by clicking on it.', position: { x: 100, y: 100 }, links: [], files: [], isDone: false },
+            { id: 'node-2', title: 'Create Your Own Nodes', description: 'Add more nodes to build your map. Click "Add Node" to start.', position: { x: 400, y: 250 }, links: [], files: [], isDone: true },
         ],
         connections: [
             { id: 'conn-1', from: 'node-1', to: 'node-2' }

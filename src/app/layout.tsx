@@ -3,8 +3,8 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Cosmic Canvas',
-  description: 'Your Cosmic Canvas for Ideas',
+  title: 'Idea Map',
+  description: 'Visually organize your ideas',
 };
 
 export default function RootLayout({

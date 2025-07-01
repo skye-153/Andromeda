@@ -43,38 +43,38 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 0 0% 16%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 238 41% 45%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 24%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 24%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 288 64% 57%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 24%;
-    --input: 0 0% 24%;
-    --ring: 288 64% 57%;
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 262 84% 58%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 217 91% 60%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 0 0% 10%;
-    --sidebar-foreground: 0 0% 95.9%;
-    --sidebar-primary: 288 64% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 20%;
-    --sidebar-accent-foreground: 0 0% 95.9%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 288 64% 57%;
+    --sidebar-background: 224 71% 6%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 215 28% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 28% 12%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 

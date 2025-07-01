@@ -20,7 +20,7 @@ const Starfield = () => {
     mountRef.current.appendChild(renderer.domElement);
 
     const starGeo = new THREE.BufferGeometry();
-    const starCount = 8000;
+    const starCount = 12000;
     const vertices = [];
     for (let i = 0; i < starCount; i++) {
       const x = (Math.random() - 0.5) * 2000;
@@ -57,10 +57,11 @@ const Starfield = () => {
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime();
-      stars.rotation.y = elapsedTime / 10;
+      stars.rotation.y = elapsedTime / 15;
+      stars.rotation.x = elapsedTime / 20;
       
-      camera.position.x += (mouse.x * 0.5 - camera.position.x) * 0.02;
-      camera.position.y += (mouse.y * 0.5 - camera.position.y) * 0.02;
+      camera.position.x += (mouse.x * 0.8 - camera.position.x) * 0.03;
+      camera.position.y += (mouse.y * 0.8 - camera.position.y) * 0.03;
       camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
