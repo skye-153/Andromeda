@@ -3,7 +3,7 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Idea Map',
+  title: 'Andromeda',
   description: 'Visually organize your ideas',
 };
 

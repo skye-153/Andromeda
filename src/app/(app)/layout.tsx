@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="p-4">
             <Link href="/home" className="flex items-center gap-3">
                  <BrainCircuit className="w-8 h-8 text-primary"/>
-                <span className="text-xl font-semibold">Idea Map</span>
+                <span className="text-xl font-semibold">Andromeda</span>
             </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
