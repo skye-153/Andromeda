@@ -1,5 +1,3 @@
-# Firebase Studio
+# Andromeda
 
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+Manager/Planner app which runs locally on your system 
