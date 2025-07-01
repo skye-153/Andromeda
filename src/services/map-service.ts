@@ -2,7 +2,7 @@
 
 import { ObjectId } from 'mongodb';
 import clientPromise from '@/lib/mongodb';
-import { MapData, Node, Connection } from '@/lib/types';
+import { MapData, Node } from '@/lib/types';
 
 async function getDb() {
     const client = await clientPromise;
@@ -29,7 +29,6 @@ export async function createMap(name: string) {
     const newMap = {
         name,
         nodes: [],
-        connections: [],
     };
     const result = await collection.insertOne(newMap);
     return {
@@ -47,21 +46,22 @@ export async function getMap(id: string): Promise<MapData | null> {
     if (!map) {
         return null;
     }
-    const { _id, ...rest } = map;
+    const { _id, name, nodes } = map;
     return {
         id: _id.toString(),
-        ...rest
+        name,
+        nodes: nodes || []
     };
 }
 
-export async function updateMap({ id, nodes, connections }: { id: string, nodes: Node[], connections: Connection[] }) {
+export async function updateMap({ id, nodes }: { id: string, nodes: Node[] }) {
     if (!ObjectId.isValid(id)) {
         throw new Error('Invalid map ID');
     }
     const collection = await getMapsCollection();
     await collection.updateOne(
         { _id: new ObjectId(id) },
-        { $set: { nodes, connections } }
+        { $set: { nodes } }
     );
 }
 
