@@ -61,3 +61,13 @@ export async function deleteMap(id: string): Promise<void> {
     maps = maps.filter(m => m.id !== id);
     return Promise.resolve();
 }
+
+export async function renameMap(id: string, newName: string): Promise<MapData | null> {
+    // Find the map and update its name in the in-memory store.
+    const mapIndex = maps.findIndex(m => m.id === id);
+    if (mapIndex !== -1) {
+        maps[mapIndex].name = newName;
+        return Promise.resolve(maps[mapIndex]);
+    }
+    return Promise.resolve(null);
+}

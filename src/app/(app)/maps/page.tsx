@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MoreVertical, Plus, Trash2 } from 'lucide-react';
+import { MoreVertical, Plus, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateMapDialog } from '@/components/maps/create-map-dialog';
-import { getMaps, createMap, deleteMap } from '@/services/map-service';
+import { getMaps, createMap, deleteMap, renameMap } from '@/services/map-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { RenameMapDialog } from '@/components/maps/rename-map-dialog';
 
 interface Map {
   id: string;
@@ -37,6 +38,8 @@ export default function MapsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [mapToDelete, setMapToDelete] = useState<Map | null>(null);
+  const [isRenameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [mapToRename, setMapToRename] = useState<Map | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -78,6 +81,30 @@ export default function MapsPage() {
     }
   };
 
+  const handleRenameMap = async (newName: string) => {
+    if (!mapToRename) return;
+    try {
+      const updatedMap = await renameMap(mapToRename.id, newName);
+      if (updatedMap) {
+        setMaps(prevMaps =>
+          prevMaps.map(map => (map.id === updatedMap.id ? { id: updatedMap.id, name: updatedMap.name } : map))
+        );
+        toast({ title: 'Map Renamed', description: `Your map is now called "${newName}".` });
+      } else {
+        throw new Error('Map not found');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error renaming map',
+        description: 'Could not rename the map. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setMapToRename(null);
+      setRenameDialogOpen(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div>
@@ -114,6 +141,13 @@ export default function MapsPage() {
         isOpen={isCreateDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onCreate={handleCreateMap}
+      />
+      
+      <RenameMapDialog
+        isOpen={isRenameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        onRename={handleRenameMap}
+        map={mapToRename}
       />
 
       <AlertDialog open={!!mapToDelete} onOpenChange={() => setMapToDelete(null)}>
@@ -165,6 +199,16 @@ export default function MapsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setMapToRename(map);
+                        setRenameDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Rename
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive"
                       onSelect={(e) => {

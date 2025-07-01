@@ -2,6 +2,7 @@ import { MapCanvas } from '@/components/maps/map-canvas';
 import { getMap } from '@/services/map-service';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
 export default async function MapEditorPage({ params }: { params: { mapId: string } }) {
     const map = await getMap(params.mapId);
 

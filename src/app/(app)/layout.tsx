@@ -2,7 +2,7 @@
 import React from 'react';
 import { Home, Map, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -17,6 +17,21 @@ import {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const getHeaderTitle = () => {
+    // If on a specific map page, try to get the name from the query params.
+    if (pathname.startsWith('/maps/') && pathname.split('/').length > 2) {
+      const mapName = searchParams.get('name');
+      if (mapName) {
+        return decodeURIComponent(mapName);
+      }
+      return 'Map'; // Fallback if name is not in URL
+    }
+
+    // Default behavior for other pages like /home or /maps
+    return pathname.split('/').pop()?.replace('-', ' ') || 'Home';
+  };
 
   return (
     <SidebarProvider>
@@ -52,7 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
           <SidebarTrigger />
           <h2 className="text-xl font-semibold capitalize">
-            {pathname.split('/').pop()?.replace('-', ' ') || 'Home'}
+            {getHeaderTitle()}
           </h2>
         </header>
         <main className="p-4 md:p-6 lg:p-8">{children}</main>
