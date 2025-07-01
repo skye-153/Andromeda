@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 
 
 interface NodeEditorProps {
@@ -36,11 +37,11 @@ interface NodeEditorProps {
 }
 
 export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: NodeEditorProps) {
-  const [formData, setFormData] = useState<Node>(node);
+  const [formData, setFormData] = useState<Node>({ ...node, isDone: node.isDone ?? false });
   const [newLink, setNewLink] = useState('');
 
   useEffect(() => {
-    setFormData(node);
+    setFormData({ ...node, isDone: node.isDone ?? false });
   }, [node, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -83,6 +84,19 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} placeholder="Add details about this node..."/>
+          </div>
+           <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+                <Label>Mark as Complete</Label>
+                <p className="text-sm text-muted-foreground">
+                    Completed nodes will be visually distinct on the map.
+                </p>
+            </div>
+            <Switch
+                checked={formData.isDone}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isDone: checked }))}
+                aria-readonly
+            />
           </div>
           <div className="space-y-4">
               <Label>YouTube Links</Label>
