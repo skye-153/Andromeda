@@ -1,74 +1,55 @@
 'use server';
 
-import { ObjectId } from 'mongodb';
-import clientPromise from '@/lib/mongodb';
 import { MapData, Node } from '@/lib/types';
 
-async function getDb() {
-    const client = await clientPromise;
-    return client.db();
+// In-memory store for maps, seeded with some initial data for testing.
+let maps: MapData[] = [
+    {
+        id: '1',
+        name: 'My First Map',
+        nodes: [
+            { id: 'node-1', title: 'Welcome!', description: 'This is your first node.', position: { x: 100, y: 100 }, links: [], files: [] },
+            { id: 'node-2', title: 'Get Started', description: 'Add more nodes to build your map.', position: { x: 400, y: 250 }, links: [], files: [] },
+        ]
+    }
+];
+
+export async function getMaps(): Promise<{ id: string, name: string }[]> {
+    // Return a list of map names and IDs from the in-memory store.
+    return Promise.resolve(maps.map(map => ({ id: map.id, name: map.name })));
 }
 
-async function getMapsCollection() {
-    const db = await getDb();
-    return db.collection<Omit<MapData, 'id'>>('maps');
-}
-
-export async function getMaps() {
-    const collection = await getMapsCollection();
-    const maps = await collection.find({}, { projection: { name: 1 } }).sort({ _id: -1 }).toArray();
-    
-    return maps.map(map => ({
-        id: map._id.toString(),
-        name: map.name,
-    })) as { id: string, name: string }[];
-}
-
-export async function createMap(name: string) {
-    const collection = await getMapsCollection();
-    const newMap = {
+export async function createMap(name: string): Promise<{ id: string, name: string }> {
+    // Create a new map and add it to the in-memory store.
+    const newMap: MapData = {
+        id: crypto.randomUUID(),
         name,
         nodes: [],
     };
-    const result = await collection.insertOne(newMap);
-    return {
-        id: result.insertedId.toString(),
-        name,
-    };
+    maps.push(newMap);
+    return Promise.resolve({ id: newMap.id, name: newMap.name });
 }
 
 export async function getMap(id: string): Promise<MapData | null> {
-    if (!ObjectId.isValid(id)) {
-        return null;
-    }
-    const collection = await getMapsCollection();
-    const map = await collection.findOne({ _id: new ObjectId(id) });
-    if (!map) {
-        return null;
-    }
-    const { _id, name, nodes } = map;
-    return {
-        id: _id.toString(),
-        name,
-        nodes: nodes || []
-    };
+    // Find and return a single map by its ID from the in-memory store.
+    const map = maps.find(m => m.id === id);
+    return Promise.resolve(map || null);
 }
 
-export async function updateMap({ id, nodes }: { id: string, nodes: Node[] }) {
-    if (!ObjectId.isValid(id)) {
-        throw new Error('Invalid map ID');
+export async function updateMap({ id, nodes }: { id: string, nodes: Node[] }): Promise<void> {
+    // Update the nodes for a specific map in the in-memory store.
+    const mapIndex = maps.findIndex(m => m.id === id);
+    if (mapIndex !== -1) {
+        maps[mapIndex].nodes = nodes;
+    } else {
+        // In a real app, you might want more robust error handling.
+        console.error(`Map with id ${id} not found.`);
     }
-    const collection = await getMapsCollection();
-    await collection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { nodes } }
-    );
+    return Promise.resolve();
 }
 
-export async function deleteMap(id: string) {
-    if (!ObjectId.isValid(id)) {
-        throw new Error('Invalid map ID');
-    }
-    const collection = await getMapsCollection();
-    await collection.deleteOne({ _id: new ObjectId(id) });
+export async function deleteMap(id: string): Promise<void> {
+    // Remove a map from the in-memory store.
+    maps = maps.filter(m => m.id !== id);
+    return Promise.resolve();
 }
