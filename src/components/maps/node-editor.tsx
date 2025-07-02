@@ -71,7 +71,7 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg w-[90vw] flex flex-col">
+      <SheetContent className="sm:max-w-lg w-[90vw] flex flex-col left-1/2 transform -translate-x-1/2 right-auto">
         <SheetHeader className="px-6 pt-6">
           <SheetTitle>Edit Node</SheetTitle>
           <SheetDescription>Update node properties. Click save when you're done.</SheetDescription>
