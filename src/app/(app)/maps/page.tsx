@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { MoreVertical, Plus, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';

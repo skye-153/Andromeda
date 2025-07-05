@@ -276,9 +276,6 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
               >
                 <Upload className="mr-2 h-4 w-4" /> Attach Files
               </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Files are stored locally and will be lost when you refresh the page.
-              </p>
             </div>
             
             {formData.files.length > 0 && (
