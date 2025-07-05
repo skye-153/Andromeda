@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, X, Link as LinkIcon, File } from 'lucide-react';
-import { type Node } from '@/lib/types';
+import { Trash2, X, Link as LinkIcon, File, Upload, ExternalLink, Edit2 } from 'lucide-react';
+import { type Node, type FileData } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-
+import { useToast } from '@/hooks/use-toast';
 
 interface NodeEditorProps {
   isOpen: boolean;
@@ -39,6 +39,10 @@ interface NodeEditorProps {
 export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: NodeEditorProps) {
   const [formData, setFormData] = useState<Node>({ ...node, isDone: node.isDone ?? false });
   const [newLink, setNewLink] = useState('');
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editingFileName, setEditingFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setFormData({ ...node, isDone: node.isDone ?? false });
@@ -58,6 +62,139 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
 
   const handleRemoveLink = (linkToRemove: string) => {
       setFormData(prev => ({...prev, links: prev.links.filter(l => l !== linkToRemove)}));
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        const fileData: FileData = {
+          id: crypto.randomUUID(),
+          name: file.name,
+          originalName: file.name,
+          size: file.size,
+          type: file.type,
+          content: content.split(',')[1], // Remove the data:application/...;base64, prefix
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          files: [...prev.files, fileData]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+
+    toast({
+      title: "Files attached",
+      description: `${files.length} file(s) have been attached to this node.`,
+    });
+
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleOpenFile = (file: FileData) => {
+    try {
+      // Convert base64 back to blob
+      const byteCharacters = atob(file.content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: file.type });
+
+      // Create object URL for opening
+      const url = URL.createObjectURL(blob);
+      
+      // For images, PDFs, and text files, try to open in new tab
+      if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('text/')) {
+        window.open(url, '_blank');
+        toast({
+          title: "File opened",
+          description: `"${file.name}" opened in new tab.`,
+        });
+      } else {
+        // For other file types, try to open with default application
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "File opened",
+          description: `"${file.name}" opened with default application.`,
+        });
+      }
+
+      // Clean up the object URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error opening file",
+        description: "Could not open the file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      files: prev.files.filter(f => f.id !== fileId)
+    }));
+    toast({
+      title: "File removed",
+      description: "File has been removed from this node.",
+    });
+  };
+
+  const handleStartRenameFile = (file: FileData) => {
+    setEditingFileId(file.id);
+    setEditingFileName(file.name);
+  };
+
+  const handleSaveFileName = () => {
+    if (!editingFileId || !editingFileName.trim()) return;
+
+    setFormData(prev => ({
+      ...prev,
+      files: prev.files.map(f => 
+        f.id === editingFileId ? { ...f, name: editingFileName.trim() } : f
+      )
+    }));
+
+    setEditingFileId(null);
+    setEditingFileName('');
+    toast({
+      title: "File renamed",
+      description: "File name has been updated.",
+    });
+  };
+
+  const handleCancelRename = () => {
+    setEditingFileId(null);
+    setEditingFileName('');
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleSave = () => {
@@ -121,19 +258,109 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
                   ))}
               </ul>
           </div>
-           <div className="space-y-2">
+          <div className="space-y-4">
             <Label>Files</Label>
-            <Button variant="outline" className="w-full justify-start font-normal" disabled>
-                <File className="mr-2 h-4 w-4" /> Attach File
-            </Button>
-            <p className="text-xs text-muted-foreground text-center">File attachments are not yet implemented.</p>
-           </div>
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                accept="*/*"
+              />
+              <Button 
+                variant="outline" 
+                className="w-full justify-start font-normal" 
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" /> Attach Files
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Files are stored locally and will be lost when you refresh the page.
+              </p>
+            </div>
+            
+            {formData.files.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Attached Files ({formData.files.length})</Label>
+                <ul className="space-y-2">
+                  {formData.files.map((file, index) => (
+                    <li key={file.id} className="flex items-center justify-between text-sm bg-secondary p-3 rounded-md">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <File className="h-4 w-4 shrink-0 text-muted-foreground"/>
+                        {editingFileId === file.id ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <Input
+                              value={editingFileName}
+                              onChange={(e) => setEditingFileName(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveFileName();
+                                if (e.key === 'Escape') handleCancelRename();
+                              }}
+                              autoFocus
+                            />
+                            <Button size="sm" variant="ghost" onClick={handleSaveFileName}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div 
+                            className="flex-1 min-w-0 cursor-pointer hover:bg-accent/50 p-1 rounded transition-colors"
+                            onClick={() => handleOpenFile(file)}
+                            title="Click to open/download file"
+                          >
+                            <div className="font-medium truncate">{file.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatFileSize(file.size)} • {file.type || 'Unknown type'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {editingFileId !== file.id && (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => handleStartRenameFile(file)}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => handleOpenFile(file)}
+                              title="Open file"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => handleRemoveFile(file.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
         <SheetFooter className="p-6 flex justify-between items-center bg-background border-t">
           <AlertDialog>
             <AlertDialogTrigger asChild>
                 <Button variant="destructive">
-                    <Trash2 className="mr-2 h-4 w-4"/> Delete Node
+                    <Trash2 className="mr-2 h-4"/> Delete Node
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

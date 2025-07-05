@@ -1,6 +1,6 @@
 'use server';
 
-import { MapData, Node, Connection } from '@/lib/types';
+import { MapData, Node, Connection, FileData } from '@/lib/types';
 
 // In-memory store for maps, seeded with some initial data for testing.
 let maps: MapData[] = [

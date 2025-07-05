@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { type Node } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, File } from 'lucide-react';
 
 interface MapNodeProps {
     node: Node;
@@ -82,7 +82,15 @@ export const MapNode = ({ node, onClick, onDrag, isLinking }: MapNodeProps) => {
             )}>
                 <CardHeader className="p-4 flex flex-row items-center justify-between gap-2">
                     <CardTitle className={cn("text-base truncate", node.isDone && "line-through")}>{node.title}</CardTitle>
-                    {node.isDone && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
+                    <div className="flex items-center gap-1">
+                        {node.files.length > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <File className="h-3 w-3" />
+                                <span>{node.files.length}</span>
+                            </div>
+                        )}
+                        {node.isDone && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
+                    </div>
                 </CardHeader>
             </Card>
         </div>

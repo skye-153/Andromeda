@@ -1,10 +1,19 @@
+export interface FileData {
+    id: string;
+    name: string;
+    originalName: string;
+    size: number;
+    type: string;
+    content: string; // base64 encoded file content
+}
+
 export interface Node {
     id: string;
     position: { x: number; y: number };
     title: string;
     description: string;
     links: string[];
-    files: string[];
+    files: FileData[];
     isDone?: boolean;
 }
 
