@@ -1,41 +1,15 @@
 'use server';
 
 import { MapData, Node, Connection, FileData } from '@/lib/types';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const MAPS_FILE_PATH = path.join(process.cwd(), 'data', 'maps.json');
-
-let maps: MapData[] = [];
-
-async function readMapsFromFile(): Promise<MapData[]> {
-    try {
-        const data = await fs.readFile(MAPS_FILE_PATH, 'utf8');
-        return JSON.parse(data);
-    } catch (error: unknown) {
-        if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'ENOENT') {
-            // File does not exist, return empty array
-            return [];
-        }
-        console.error('Error reading maps file:', error);
-        return [];
-    }
-}
-
-async function writeMapsToFile(mapsData: MapData[]): Promise<void> {
-    try {
-        await fs.writeFile(MAPS_FILE_PATH, JSON.stringify(mapsData, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error writing maps file:', error);
-    }
-}
+import db, { initializeLowDb } from '@/lib/lowdb';
 
 // Initialize maps from file on server start
 (async () => {
-    maps = await readMapsFromFile();
+    await initializeLowDb();
     // If no maps exist, seed with initial data
-    if (maps.length === 0) {
-        maps = [
+    if (db.data.maps.length === 0) {
+        console.log('No maps found, seeding initial data.');
+        db.data.maps = [
             {
                 id: '1',
                 name: 'Getting Started',
@@ -48,14 +22,14 @@ async function writeMapsToFile(mapsData: MapData[]): Promise<void> {
                 ]
             }
         ];
-        await writeMapsToFile(maps);
+        await db.write();
     }
 })();
 
 
 export async function getMaps(): Promise<{ id: string, name: string }[]> {
     // Return a list of map names and IDs from the in-memory store.
-    return Promise.resolve(maps.map(map => ({ id: map.id, name: map.name })));
+    return Promise.resolve(db.data.maps.map(map => ({ id: map.id, name: map.name })));
 }
 
 export async function createMap(name: string): Promise<{ id: string, name: string }> {
@@ -66,14 +40,14 @@ export async function createMap(name: string): Promise<{ id: string, name: strin
         nodes: [],
         connections: [],
     };
-    maps.push(newMap);
-    await writeMapsToFile(maps); // Persist changes
+    db.data.maps.push(newMap);
+    await db.write(); // Persist changes
     return Promise.resolve({ id: newMap.id, name: newMap.name });
 }
 
 export async function getMap(id: string): Promise<MapData | null> {
     // Find and return a single map by its ID from the in-memory store.
-    const map = maps.find(m => m.id === id);
+    const map = db.data.maps.find(m => m.id === id);
     if (map && !map.connections) {
         map.connections = [];
     }
@@ -82,11 +56,11 @@ export async function getMap(id: string): Promise<MapData | null> {
 
 export async function updateMap({ id, nodes, connections }: { id: string, nodes: Node[], connections: Connection[] }): Promise<void> {
     // Update the nodes and connections for a specific map in the in-memory store.
-    const mapIndex = maps.findIndex(m => m.id === id);
+    const mapIndex = db.data.maps.findIndex(m => m.id === id);
     if (mapIndex !== -1) {
-        maps[mapIndex].nodes = nodes;
-        maps[mapIndex].connections = connections;
-        await writeMapsToFile(maps); // Persist changes
+        db.data.maps[mapIndex].nodes = nodes;
+        db.data.maps[mapIndex].connections = connections;
+        await db.write(); // Persist changes
     } else {
         // In a real app, you might want more robust error handling.
         console.error(`Map with id ${id} not found.`);
@@ -96,18 +70,18 @@ export async function updateMap({ id, nodes, connections }: { id: string, nodes:
 
 export async function deleteMap(id: string): Promise<void> {
     // Remove a map from the in-memory store.
-    maps = maps.filter(m => m.id !== id);
-    await writeMapsToFile(maps); // Persist changes
+    db.data.maps = db.data.maps.filter(m => m.id !== id);
+    await db.write(); // Persist changes
     return Promise.resolve();
 }
 
 export async function renameMap(id: string, newName: string): Promise<MapData | null> {
     // Find the map and update its name in the in-memory store.
-    const mapIndex = maps.findIndex(m => m.id === id);
+    const mapIndex = db.data.maps.findIndex(m => m.id === id);
     if (mapIndex !== -1) {
-        maps[mapIndex].name = newName;
-        await writeMapsToFile(maps); // Persist changes
-        return Promise.resolve(maps[mapIndex]);
+        db.data.maps[mapIndex].name = newName;
+        await db.write(); // Persist changes
+        return Promise.resolve(db.data.maps[mapIndex]);
     }
     return Promise.resolve(null);
 }
