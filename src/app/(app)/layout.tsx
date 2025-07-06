@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{children: 'Home', side: 'right'}}>
+              <SidebarMenuButton asChild size="lg" tooltip={{children: 'Home', side: 'right'}}>
                 <Link href="/home">
                   <Home />
                   <span>Home</span>
@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{children: 'Maps', side: 'right'}}>
+              <SidebarMenuButton asChild size="lg" tooltip={{children: 'Maps', side: 'right'}}>
                 <Link href="/maps">
                   <Map />
                   <span>Maps</span>
