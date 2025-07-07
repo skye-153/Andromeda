@@ -33,6 +33,7 @@ export async function getMaps(): Promise<{ id: string, name: string }[]> {
 }
 
 export async function createMap(name: string): Promise<{ id: string, name: string }> {
+    await db.read(); // Ensure the latest data is read before creating a new map
     // Create a new map and add it to the in-memory store.
     const newMap: MapData = {
         id: crypto.randomUUID(),
@@ -46,6 +47,7 @@ export async function createMap(name: string): Promise<{ id: string, name: strin
 }
 
 export async function getMap(id: string): Promise<MapData | null> {
+    await db.read(); // Ensure the latest data is read before fetching a map
     // Find and return a single map by its ID from the in-memory store.
     const map = db.data.maps.find(m => m.id === id);
     if (map && !map.connections) {

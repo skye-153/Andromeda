@@ -100,51 +100,55 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
     }
   };
 
-  const handleOpenFile = (file: FileData) => {
+  const handleOpenFile = async (file: FileData) => {
     try {
-      // Convert base64 back to blob
-      const byteCharacters = atob(file.content);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: file.type });
-
-      // Create object URL for opening
-      const url = URL.createObjectURL(blob);
-      
-      // For images, PDFs, and text files, try to open in new tab
-      if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('text/')) {
-        window.open(url, '_blank');
-        toast({
-          title: "File opened",
-          description: `"${file.name}" opened in new tab.`,
-        });
-      } else {
-        // For other file types, try to open with default application
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
+      // Check if electron API is available (i.e., running in Nativefier/Electron)
+      if (window.electron && window.electron.writeTempFile && window.electron.shell) {
+        const tempFilePath = await window.electron.writeTempFile(file.content, file.originalName);
+        await window.electron.shell.openPath(tempFilePath);
         toast({
           title: "File opened",
           description: `"${file.name}" opened with default application.`,
         });
-      }
+      } else {
+        // Fallback for web environment (e.g., development in browser)
+        const byteCharacters = atob(file.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: file.type });
+        const url = URL.createObjectURL(blob);
 
-      // Clean up the object URL after a delay
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 1000);
+        if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('text/')) {
+          window.open(url, '_blank');
+          toast({
+            title: "File opened",
+            description: `"${file.name}" opened in new tab.`,
+          });
+        } else {
+          const link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          toast({
+            title: "File opened",
+            description: `"${file.name}" opened with default application.`,
+          });
+        }
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }
     } catch (error) {
+      console.error("Error opening file:", error);
       toast({
         title: "Error opening file",
-        description: "Could not open the file. Please try again.",
+        description: "Could not open the file. Please try again. Check console for details.",
         variant: "destructive",
       });
     }
