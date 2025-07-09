@@ -26,12 +26,16 @@ async function getAppDataDirPath(): Promise<string> {
 
 export async function initializeLowDb(): Promise<Low<Data>> {
   const dataDirPath = await getAppDataDirPath();
-  const dbFilePath = path.join(dataDirPath, 'db.json');
+  // Use the correct path module based on environment
+  const isTauri = typeof window !== 'undefined' && window.__TAURI__;
+  const dbFilePath = isTauri
+    ? await path.join(dataDirPath, 'db.json')
+    : nodePath.join(dataDirPath, 'db.json');
 
   // Ensure the data directory exists
   await fs.mkdir(dataDirPath, { recursive: true });
 
-  const adapter = new JSONFile<Data>(await dbFilePath);
+  const adapter = new JSONFile<Data>(dbFilePath);
   const db = new Low<Data>(adapter, defaultData);
 
   await db.read();
