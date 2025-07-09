@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { invoke } from '@tauri-apps/api/core';
+
 import { Trash2, X, Link as LinkIcon, File, Upload, ExternalLink, Edit2 } from 'lucide-react';
 import { type Node, type FileData } from '@/lib/types';
 import {
@@ -100,16 +102,13 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
     }
   };
 
+
+
   const handleOpenFile = async (file: FileData) => {
     try {
-      // Check if electron API is available (i.e., running in Nativefier/Electron)
-      if (window.electron && window.electron.writeTempFile && window.electron.shell) {
-        const tempFilePath = await window.electron.writeTempFile(file.content, file.originalName);
-        await window.electron.shell.openPath(tempFilePath);
-        toast({
-          title: "File opened",
-          description: `"${file.name}" opened with default application.`,
-        });
+      // Check if running in Tauri
+      if (window.__TAURI__) {
+        await invoke('open_file_command', { file });
       } else {
         // Fallback for web environment (e.g., development in browser)
         const byteCharacters = atob(file.content);

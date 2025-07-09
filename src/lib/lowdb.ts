@@ -1,38 +1,45 @@
 import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node'; // Correct import for Node.js environment
-import path from 'path';
-import { MapData } from '@/lib/types'; // Assuming MapData is defined here
-import { promises as fs } from 'fs'; // Import the fs module
+import { JSONFile } from 'lowdb/node';
+import { MapData } from '@/lib/types';
+import { promises as fs } from 'fs';
+import { invoke } from '@tauri-apps/api/core'; // Import invoke
+import * as path from '@tauri-apps/api/path'; // Import path from tauri-apps/api
+import * as nodePath from 'path'; // Import Node.js path module
 
-// Define the structure of your database
 interface Data {
   maps: MapData[];
 }
 
 const defaultData: Data = { maps: [] };
 
-// Determine the path for the database file
-// In a real Electron app, you'd use app.getPath('userData') for persistent storage
-const dataDirPath = path.join(process.cwd(), 'data');
-const dbFilePath = path.join(dataDirPath, 'db.json');
+// Function to get the data directory path using Tauri's API
+async function getAppDataDirPath(): Promise<string> {
+  if (typeof window !== 'undefined' && window.__TAURI__) {
+    // Use Tauri's appDataDir for persistent storage
+    return await path.appDataDir();
+  } else {
+    // Fallback for development outside Tauri (e.g., web browser)
+    // This will create 'data' in the project root during web development
+    return nodePath.join(process.cwd(), 'data');
+  }
+}
 
-// Configure lowdb to use a JSON file
-const adapter = new JSONFile<Data>(dbFilePath);
-const db = new Low<Data>(adapter, defaultData);
+export async function initializeLowDb(): Promise<Low<Data>> {
+  const dataDirPath = await getAppDataDirPath();
+  const dbFilePath = path.join(dataDirPath, 'db.json');
 
-// Function to initialize the database
-export async function initializeLowDb() {
   // Ensure the data directory exists
   await fs.mkdir(dataDirPath, { recursive: true });
 
+  const adapter = new JSONFile<Data>(await dbFilePath);
+  const db = new Low<Data>(adapter, defaultData);
+
   await db.read();
-  // If the database file is empty or doesn't exist, write default data
   if (!db.data || Object.keys(db.data).length === 0) {
     db.data = defaultData;
     await db.write();
   }
   console.log(`LowDB initialized. Data file: ${dbFilePath}`);
+  return db;
 }
-
-// Export the db instance for use in other services
-export default db;
+ 
