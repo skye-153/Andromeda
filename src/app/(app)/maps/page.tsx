@@ -1,14 +1,11 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import React, { useState, useEffect } from 'react';
-import { MoreVertical, Plus, Trash2, Pencil } from 'lucide-react';
-import Link from 'next/link';
+import { MoreVertical, Plus, Trash2, Pencil, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateMapDialog } from '@/components/maps/create-map-dialog';
-import { getMaps, createMap, deleteMap, renameMap } from '@/services/map-service';
+import { getMaps, createMap, deleteMap, renameMap, getMap } from '@/services/map-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -27,8 +24,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { RenameMapDialog } from '@/components/maps/rename-map-dialog';
+import { MapCanvas } from '@/components/maps/map-canvas';
+import { MapData } from '@/lib/types';
 
 interface Map {
   id: string;
@@ -42,8 +40,9 @@ export default function MapsPage() {
   const [mapToDelete, setMapToDelete] = useState<Map | null>(null);
   const [isRenameDialogOpen, setRenameDialogOpen] = useState(false);
   const [mapToRename, setMapToRename] = useState<Map | null>(null);
+  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  const [selectedMapData, setSelectedMapData] = useState<MapData | null>(null);
   const { toast } = useToast();
-  const router = useRouter();
 
   useEffect(() => {
     getMaps().then((fetchedMaps) => {
@@ -52,10 +51,26 @@ export default function MapsPage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (selectedMapId) {
+      getMap(selectedMapId).then(data => {
+        if (data) {
+          setSelectedMapData(data);
+        } else {
+          setSelectedMapId(null);
+          toast({ title: "Map not found", variant: "destructive" });
+        }
+      });
+    } else {
+      setSelectedMapData(null);
+    }
+  }, [selectedMapId]);
+
   const handleCreateMap = async (name: string) => {
     try {
       const newMap = await createMap(name);
-      router.push(`/maps/${newMap.id}?name=${encodeURIComponent(newMap.name)}`);
+      setMaps((prev) => [...prev, newMap]);
+      setSelectedMapId(newMap.id);
     } catch (error) {
       toast({
         title: 'Error creating map',
@@ -71,6 +86,9 @@ export default function MapsPage() {
     try {
       await deleteMap(mapToDelete.id);
       setMaps((prevMaps) => prevMaps.filter((map) => map.id !== mapToDelete.id));
+      if (selectedMapId === mapToDelete.id) {
+        setSelectedMapId(null);
+      }
       toast({ title: 'Map Deleted', description: `"${mapToDelete.name}" has been deleted.` });
     } catch (error) {
       toast({
@@ -91,6 +109,9 @@ export default function MapsPage() {
         setMaps(prevMaps =>
           prevMaps.map(map => (map.id === updatedMap.id ? { id: updatedMap.id, name: updatedMap.name } : map))
         );
+        if (selectedMapData && selectedMapData.id === updatedMap.id) {
+          setSelectedMapData(updatedMap);
+        }
         toast({ title: 'Map Renamed', description: `Your map is now called "${newName}".` });
       } else {
         throw new Error('Map not found');
@@ -126,6 +147,20 @@ export default function MapsPage() {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (selectedMapId && selectedMapData) {
+    return (
+      <div className="w-full h-[calc(100vh-120px)] flex flex-col">
+        <div className="flex items-center mb-4">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedMapId(null)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold ml-2">{selectedMapData.name}</h1>
+        </div>
+        <MapCanvas map={selectedMapData} />
       </div>
     );
   }
@@ -224,9 +259,9 @@ export default function MapsPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <Link
-                href={`/maps/${map.id}?name=${encodeURIComponent(map.name)}`}
-                className="block h-full flex-grow"
+              <div
+                onClick={() => setSelectedMapId(map.id)}
+                className="block h-full flex-grow cursor-pointer"
               >
                 <div className="flex flex-col h-full">
                   <CardHeader>
@@ -236,7 +271,7 @@ export default function MapsPage() {
                     <p className="text-sm text-muted-foreground">Click to open editor</p>
                   </CardContent>
                 </div>
-              </Link>
+              </div>
             </Card>
           ))}
         </div>

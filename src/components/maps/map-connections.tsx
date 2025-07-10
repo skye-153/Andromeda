@@ -8,12 +8,15 @@ interface MapConnectionsProps {
     connections: Connection[];
     linkingState: { active: boolean; from: string | null };
     mousePosition: { x: number; y: number } | null;
+    scale: number;
+    translateX: number;
+    translateY: number;
 }
 
 const NODE_WIDTH = 256;
 const NODE_HEIGHT = 56; // Approximated from MapNode styling
 
-export function MapConnections({ nodes, connections, linkingState, mousePosition }: MapConnectionsProps) {
+export function MapConnections({ nodes, connections, linkingState, mousePosition, scale, translateX, translateY }: MapConnectionsProps) {
     const getNodeById = (id: string | null): Node | undefined => nodes.find(n => n.id === id);
 
     return (
@@ -49,3 +52,5 @@ export function MapConnections({ nodes, connections, linkingState, mousePosition
         </svg>
     );
 }
+
+

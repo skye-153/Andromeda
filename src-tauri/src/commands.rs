@@ -1,4 +1,5 @@
-use tauri::{command, AppHandle, Manager};
+use super::{write_data, AppData, AppState, Connection, MapData, Node};
+use tauri::{command, AppHandle, Manager, State};
 use tauri_plugin_opener::open_path;
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
@@ -38,4 +39,75 @@ pub async fn open_file_command(file: FileData, app_handle: AppHandle) -> Result<
 pub async fn get_app_cache_dir_command(app_handle: AppHandle) -> Result<PathBuf, String> {
     app_handle.path().app_cache_dir()
         .map_err(|e| e.to_string())
+}
+
+#[command]
+pub fn get_maps(state: State<AppState>) -> Result<Vec<MapData>, String> {
+    let data = state.0.lock().unwrap();
+    Ok(data.maps.clone())
+}
+
+#[command]
+pub fn create_map(name: String, state: State<AppState>, app_handle: AppHandle) -> Result<MapData, String> {
+    let mut data = state.0.lock().unwrap();
+    let new_map = MapData {
+        id: uuid::Uuid::new_v4().to_string(),
+        name,
+        nodes: vec![],
+        connections: vec![],
+    };
+    data.maps.push(new_map.clone());
+    write_data(&app_handle, &data);
+    Ok(new_map)
+}
+
+#[command]
+pub fn get_map(id: String, state: State<AppState>) -> Result<Option<MapData>, String> {
+    let data = state.0.lock().unwrap();
+    Ok(data.maps.iter().find(|m| m.id == id).cloned())
+}
+
+#[command]
+pub fn update_map(
+    id: String,
+    nodes: Vec<Node>,
+    connections: Vec<Connection>,
+    state: State<AppState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let mut data = state.0.lock().unwrap();
+    if let Some(map) = data.maps.iter_mut().find(|m| m.id == id) {
+        map.nodes = nodes;
+        map.connections = connections;
+        write_data(&app_handle, &data);
+        Ok(())
+    } else {
+        Err("Map not found".to_string())
+    }
+}
+
+#[command]
+pub fn delete_map(id: String, state: State<AppState>, app_handle: AppHandle) -> Result<(), String> {
+    let mut data = state.0.lock().unwrap();
+    data.maps.retain(|m| m.id != id);
+    write_data(&app_handle, &data);
+    Ok(())
+}
+
+#[command]
+pub fn rename_map(
+    id: String,
+    new_name: String,
+    state: State<AppState>,
+    app_handle: AppHandle,
+) -> Result<MapData, String> {
+    let mut data = state.0.lock().unwrap();
+    if let Some(map) = data.maps.iter_mut().find(|m| m.id == id) {
+        map.name = new_name;
+        let map_clone = map.clone();
+        write_data(&app_handle, &data);
+        Ok(map_clone)
+    } else {
+        Err("Map not found".to_string())
+    }
 }

@@ -10,9 +10,12 @@ interface MapNodeProps {
     onClick: (node: Node) => void;
     onDrag: (nodeId: string, position: { x: number, y: number }) => void;
     isLinking: boolean;
+    scale: number;
+    translateX: number;
+    translateY: number;
 }
 
-export const MapNode = ({ node, onClick, onDrag, isLinking }: MapNodeProps) => {
+export const MapNode = ({ node, onClick, onDrag, isLinking, scale, translateX, translateY }: MapNodeProps) => {
     const [isDragging, setIsDragging] = useState(false);
     const dragStartPos = React.useRef({ x: 0, y: 0 });
     const nodeStartPos = React.useRef({ x: 0, y: 0 });
@@ -34,24 +37,24 @@ export const MapNode = ({ node, onClick, onDrag, isLinking }: MapNodeProps) => {
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging) return;
-        const dx = e.clientX - dragStartPos.current.x;
-        const dy = e.clientY - dragStartPos.current.y;
+        const dx = (e.clientX - dragStartPos.current.x) / scale;
+        const dy = (e.clientY - dragStartPos.current.y) / scale;
         onDrag(node.id, {
             x: nodeStartPos.current.x + dx,
             y: nodeStartPos.current.y + dy,
         });
-    }, [isDragging, node.id, onDrag]);
+    }, [isDragging, node.id, onDrag, scale]);
 
     const handleMouseUp = useCallback((e: MouseEvent) => {
         if (isDragging) {
-            const dx = e.clientX - dragStartPos.current.x;
-            const dy = e.clientY - dragStartPos.current.y;
+            const dx = (e.clientX - dragStartPos.current.x) / scale;
+            const dy = (e.clientY - dragStartPos.current.y) / scale;
             if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
                 onClick(node);
             }
         }
         setIsDragging(false);
-    }, [isDragging, node, onClick]);
+    }, [isDragging, node, onClick, scale]);
     
     useEffect(() => {
         if (isDragging) {
@@ -96,3 +99,4 @@ export const MapNode = ({ node, onClick, onDrag, isLinking }: MapNodeProps) => {
         </div>
     );
 };
+
