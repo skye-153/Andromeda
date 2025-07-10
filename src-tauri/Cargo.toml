@@ -25,3 +25,5 @@ tauri = { version = "2.6.2", features = [] }
 tauri-plugin-log = "2"
 base64 = "0.22"
 tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
+tauri-plugin-shell = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
+tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
