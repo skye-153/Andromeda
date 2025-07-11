@@ -13,6 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { invoke } from '@tauri-apps/api/core';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { Trash2, X, Link as LinkIcon, File, Upload, ExternalLink, Edit2 } from 'lucide-react';
 import { type Node, type FileData } from '@/lib/types';
@@ -29,6 +36,24 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const NODE_COLORS = [
+  '#1a1a1a', // Dark Gray (almost black)
+  '#333333', // Slightly Lighter Dark Gray
+  '#4d4d4d', // Medium Dark Gray
+  '#666666', // Light Dark Gray
+  '#808080', // Gray
+  '#b30000', // Dark Red
+  '#b35900', // Dark Orange
+  '#b3b300', // Dark Yellow
+  '#006600', // Dark Green
+  '#006666', // Dark Cyan
+  '#0000b3', // Dark Blue
+  '#660066', // Dark Purple
+  '#b30059', // Dark Pink
+  '#090f29',
+];
 
 interface NodeEditorProps {
   isOpen: boolean;
@@ -224,6 +249,41 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} placeholder="Add details about this node..."/>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="size">Node Size</Label>
+            <Select
+              value={formData.size || '100%'}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, size: value }))}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="50%">50%</SelectItem>
+                <SelectItem value="75%">75%</SelectItem>
+                <SelectItem value="100%">100%</SelectItem>
+                <SelectItem value="125%">125%</SelectItem>
+                <SelectItem value="150%">150%</SelectItem>
+                <SelectItem value="200%">200%</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="color">Node Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {NODE_COLORS.map((colorOption) => (
+                <div
+                  key={colorOption}
+                  className={cn(
+                    "w-8 h-8 rounded-full cursor-pointer border-2 border-transparent transition-all duration-200",
+                    formData.color === colorOption && "border-primary"
+                  )}
+                  style={{ backgroundColor: colorOption }}
+                  onClick={() => setFormData((prev) => ({ ...prev, color: colorOption }))}
+                />
+              ))}
+            </div>
           </div>
            <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">

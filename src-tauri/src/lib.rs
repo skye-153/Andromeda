@@ -29,6 +29,10 @@ pub struct Node {
     pub files: Vec<FileData>,
     #[serde(rename = "isDone")]
     pub is_done: Option<bool>,
+    #[serde(rename = "size")]
+    pub size: Option<String>,
+    #[serde(rename = "color")]
+    pub color: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -84,6 +88,8 @@ fn read_data(app_handle: &AppHandle) -> AppData {
                         links: vec![],
                         files: vec![],
                         is_done: Some(false),
+                        size: Some("100%".to_string()),
+                        color: Some("#ffffff".to_string()),
                     },
                     Node {
                         id: "node-2".to_string(),
@@ -93,6 +99,8 @@ fn read_data(app_handle: &AppHandle) -> AppData {
                         links: vec![],
                         files: vec![],
                         is_done: Some(true),
+                        size: Some("100%".to_string()),
+                        color: Some("#ffffff".to_string()),
                     },
                 ],
                 connections: vec![Connection {

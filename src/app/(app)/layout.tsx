@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <HeaderTitle />
           </Suspense>
         </header>
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-6 lg:p-8 transition-[padding] duration-200 ease-linear peer-data-[state=expanded]:md:pl-[calc(var(--sidebar-width)+1.5rem)] peer-data-[state=collapsed]:md:pl-[calc(var(--sidebar-width-icon)+1.5rem)]">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

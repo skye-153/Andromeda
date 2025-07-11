@@ -15,6 +15,8 @@ export interface Node {
     links: string[];
     files: FileData[];
     isDone?: boolean;
+    size?: string; // e.g., "100%", "150%", "50%"
+    color?: string; // e.g., "#FF0000", "blue"
 }
 
 export interface Connection {

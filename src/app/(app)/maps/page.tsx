@@ -153,7 +153,7 @@ export default function MapsPage() {
 
   if (selectedMapId && selectedMapData) {
     return (
-      <div className="w-full h-[calc(100vh-120px)] flex flex-col">
+      <div className="w-full flex flex-col flex-grow">
         <div className="flex items-center mb-4">
           <Button variant="ghost" size="icon" onClick={() => setSelectedMapId(null)}>
             <ArrowLeft className="h-5 w-5" />
