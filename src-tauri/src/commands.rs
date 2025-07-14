@@ -1,4 +1,4 @@
-use super::{write_data, AppData, AppState, Connection, MapData, Node};
+use super::{write_data, AppData, AppState, Connection, MapData, Node, Task};
 use tauri::{command, AppHandle, Manager, State};
 use tauri_plugin_opener::open_path;
 use std::path::PathBuf;
@@ -13,6 +13,8 @@ pub struct FileData {
     pub file_type: String,
     pub content: String, // Base64 encoded content
 }
+
+
 
 #[command]
 pub async fn open_file_command(file: FileData, app_handle: AppHandle) -> Result<(), String> {
@@ -110,4 +112,18 @@ pub fn rename_map(
     } else {
         Err("Map not found".to_string())
     }
+}
+
+#[command]
+pub fn get_tasks_command(state: State<AppState>) -> Result<Vec<Task>, String> {
+    let data = state.0.lock().unwrap();
+    Ok(data.tasks.clone())
+}
+
+#[command]
+pub fn save_tasks_command(tasks: Vec<Task>, state: State<AppState>, app_handle: AppHandle) -> Result<(), String> {
+    let mut data = state.0.lock().unwrap();
+    data.tasks = tasks;
+    write_data(&app_handle, &data);
+    Ok(())
 }

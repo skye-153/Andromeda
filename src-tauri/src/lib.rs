@@ -57,8 +57,20 @@ pub struct MapData {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Task {
+    pub id: String,
+    pub title: String,
+    pub due_date: Option<String>,
+    #[serde(rename = "isCompleted")]
+    pub is_completed: bool,
+    #[serde(rename = "isUndated")]
+    pub is_undated: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppData {
     pub maps: Vec<MapData>,
+    pub tasks: Vec<Task>,
 }
 
 pub struct AppState(pub Mutex<AppData>);
@@ -109,6 +121,7 @@ fn read_data(app_handle: &AppHandle) -> AppData {
                     to: "node-2".to_string(),
                 }],
             }],
+            tasks: vec![],
         };
         let mut file = File::create(&path).unwrap();
         file.write_all(serde_json::to_string_pretty(&default_data).unwrap().as_bytes())
@@ -117,7 +130,7 @@ fn read_data(app_handle: &AppHandle) -> AppData {
     }
 
     let file = File::open(path).unwrap();
-    serde_json::from_reader(file).unwrap_or_else(|_| AppData { maps: vec![] })
+    serde_json::from_reader(file).unwrap_or_else(|_| AppData { maps: vec![], tasks: vec![] })
 }
 
 fn write_data(app_handle: &AppHandle, data: &AppData) {
@@ -152,7 +165,9 @@ pub fn run() {
             commands::get_map,
             commands::update_map,
             commands::delete_map,
-            commands::rename_map
+            commands::rename_map,
+            commands::get_tasks_command,
+            commands::save_tasks_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -31,3 +31,11 @@ export interface MapData {
     nodes: Node[];
     connections: Connection[];
 }
+
+export interface Task {
+    id: string;
+    title: string;
+    dueDate?: string; // YYYY-MM-DD format
+    isCompleted: boolean;
+    isUndated: boolean;
+}

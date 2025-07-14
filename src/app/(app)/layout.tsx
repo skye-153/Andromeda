@@ -1,6 +1,9 @@
 "use client";
 import React, { Suspense } from 'react';
 import { Home, Map, BrainCircuit } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const CalendarDays = dynamic(() => import('lucide-react').then(mod => mod.CalendarDays), { ssr: false });
 import Link from 'next/link';
 import {
   SidebarProvider,
@@ -40,6 +43,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link href="/maps">
                   <Map />
                   <span>Maps</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild size="lg" tooltip={{children: 'Calendar', side: 'right'}}>
+                <Link href="/calendar">
+                  <CalendarDays />
+                  <span>Calendar</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

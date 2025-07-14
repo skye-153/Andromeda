@@ -6,7 +6,7 @@ interface Data {
   maps: MapData[];
 }
 
-const defaultData: Data = { maps: [] };
+const defaultData: Data = { maps: [], tasks: [] };
 
 export async function initializeLowDb(): Promise<Low<Data>> {
   const appCacheDir = await invoke('get_app_cache_dir_command');
