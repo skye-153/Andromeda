@@ -1,6 +1,6 @@
 {
-  "name": "Andromeda",
-  "version": "0.1.0",
+  "name": "andromeda",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",

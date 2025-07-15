@@ -60,11 +60,13 @@ pub struct MapData {
 pub struct Task {
     pub id: String,
     pub title: String,
+    pub description: Option<String>,
     pub due_date: Option<String>,
     #[serde(rename = "isCompleted")]
     pub is_completed: bool,
     #[serde(rename = "isUndated")]
     pub is_undated: bool,
+    pub importance: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

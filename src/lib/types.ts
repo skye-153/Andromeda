@@ -35,7 +35,9 @@ export interface MapData {
 export interface Task {
     id: string;
     title: string;
+    description?: string;
     dueDate?: string; // YYYY-MM-DD format
     isCompleted: boolean;
     isUndated: boolean;
+    importance?: number;
 }
