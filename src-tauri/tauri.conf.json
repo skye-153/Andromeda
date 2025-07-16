@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Andromeda",
   "version": "1.0.0",
-  "identifier": "com.andromeda.app",
+  "identifier": "com.andromeda",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:9002",

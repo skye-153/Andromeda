@@ -137,7 +137,6 @@ pub fn get_all_calendar_events_command(state: State<AppState>) -> Result<Vec<Tas
 
 #[command]
 pub fn add_calendar_event_command(event: NewTask, state: State<AppState>, app_handle: AppHandle) -> Result<Task, String> {
-    println!("Received new event: {:?}", event);
     let mut data = state.0.lock().unwrap();
     let new_event = Task {
         id: uuid::Uuid::new_v4().to_string(),
@@ -148,7 +147,6 @@ pub fn add_calendar_event_command(event: NewTask, state: State<AppState>, app_ha
         is_undated: event.is_undated,
         importance: event.importance,
     };
-    println!("Saving new event: {:?}", new_event);
     data.tasks.push(new_event.clone());
     write_calendar_data(&app_handle, &data.tasks);
     Ok(new_event)
