@@ -17,7 +17,7 @@ const MAX_SCALE = 4;
 
 export function MapCanvas({ map }: { map: MapData }) {
   const [nodes, setNodes] = useState<Node[]>(map.nodes);
-  const [connections, setConnections] = useState<Connection[]>(map.connections || []);
+  const [connections, setConnections] = useState<MapConnection[]>(map.connections || []);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isEditorOpen, setEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -180,7 +180,7 @@ export function MapCanvas({ map }: { map: MapData }) {
         x: Math.max(0, Math.min(centerX - NODE_WIDTH / 2, boundedX - NODE_WIDTH)),
         y: Math.max(0, Math.min(centerY - NODE_HEIGHT / 2, boundedY - NODE_HEIGHT))
       },
-      title: 'New Node', description: '', links: [], files: [], isDone: false, size: "100%", color: "#ffffff",
+      title: 'New Node', description: '', links: [], files: [], isDone: false, size: "100%",
     };
     setNodes((prev) => [...prev, newNode]);
     setSelectedNode(newNode);
@@ -231,7 +231,7 @@ export function MapCanvas({ map }: { map: MapData }) {
 
   const handleSaveMap = () => {
     setIsSaving(true);
-    updateMap({ id: map.id, nodes, connections })
+    updateMap(map.id, nodes, connections)
       .then(() => toast({ title: "Map Saved!", description: `Your map \"${map.name}\" has been saved successfully.` }))
       .catch(() => toast({ title: 'Error saving map', description: 'Could not save the map. Please try again.', variant: 'destructive' }))
       .finally(() => setIsSaving(false));

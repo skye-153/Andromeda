@@ -1,12 +1,13 @@
 import { Low } from 'lowdb';
-import { MapData } from '@/lib/types';
+import { MapData, ICalendarEvent } from '@/lib/types';
 import { invoke } from '@tauri-apps/api/core';
 
 interface Data {
   maps: MapData[];
+  calendarEvents: ICalendarEvent[];
 }
 
-const defaultData: Data = { maps: [], tasks: [] };
+const defaultData: Data = { maps: [], calendarEvents: [] };
 
 export async function initializeLowDb(): Promise<Low<Data>> {
   const appCacheDir = await invoke('get_app_cache_dir_command');
@@ -16,13 +17,12 @@ export async function initializeLowDb(): Promise<Low<Data>> {
   // This function will now just return a placeholder.
   // The actual data will be fetched and managed through Tauri commands.
 
-  // @ts-ignore
-  const db: Low<Data> = {
-    data: defaultData,
-    read: async () => {},
-    write: async () => {},
-  };
+  // The adapter logic will be handled by the Rust backend.
+  // This function will now just return a placeholder.
+  // The actual data will be fetched and managed through Tauri commands.
 
-  return db;
+  // Since lowdb is no longer directly used on the frontend for persistence,
+  // this function can simply return a resolved promise.
+  return Promise.resolve({} as Low<Data>);
 }
  

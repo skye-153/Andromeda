@@ -10,68 +10,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Task } from '@/lib/types';
+import { ICalendarEvent } from '@/lib/types';
 
-interface EditDatedTaskDialogProps {
+interface AddDatedEventDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  task: Task | null;
-  onSave: (task: Task) => void;
+  onAddEvent: (eventDetails: Partial<ICalendarEvent>) => void;
+  initialDate?: Date;
 }
 
-export function EditDatedTaskDialog({ isOpen, onOpenChange, task, onSave }: EditDatedTaskDialogProps) {
-  const [editedTask, setEditedTask] = useState<Task | null>(task);
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+export function AddDatedEventDialog({ isOpen, onOpenChange, onAddEvent, initialDate }: AddDatedEventDialogProps) {
+  const [newEventTitle, setNewEventTitle] = useState('');
+  const [newEventDescription, setNewEventDescription] = useState('');
+  const [newEventImportance, setNewEventImportance] = useState<ICalendarEvent['importance']>('low');
+  const [dueDate, setDueDate] = useState<Date | undefined>(initialDate);
 
   useEffect(() => {
-    setEditedTask(task);
-    if (task?.dueDate) {
-      setDueDate(parseISO(task.dueDate));
-    } else {
-      setDueDate(undefined);
-    }
-  }, [task]);
+    setDueDate(initialDate);
+  }, [initialDate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setEditedTask(prev => prev ? { ...prev, [id]: value } : null);
-  };
-
-  const handleImportanceChange = (value: string) => {
-    setEditedTask(prev => prev ? { ...prev, importance: parseInt(value, 10) } : null);
-  };
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setDueDate(date);
-    setEditedTask(prev => prev ? { ...prev, dueDate: date ? format(date, 'yyyy-MM-dd') : undefined } : null);
-  };
-
-  const handleSave = () => {
-    if (editedTask) {
-      onSave(editedTask);
-      onOpenChange(false);
-    }
+  const handleAddEvent = () => {
+    if (newEventTitle.trim() === '') return;
+    onAddEvent({
+      title: newEventTitle,
+      description: newEventDescription,
+      dueDate: dueDate ? format(dueDate, 'yyyy-MM-dd') : undefined,
+      isCompleted: false,
+      isUndated: false,
+      importance: newEventImportance,
+    });
+    setNewEventTitle('');
+    setNewEventDescription('');
+    setNewEventImportance('low');
+    setDueDate(undefined);
+    onOpenChange(false);
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setEditedTask(null);
+      setNewEventTitle('');
+      setNewEventDescription('');
+      setNewEventImportance('low');
       setDueDate(undefined);
     }
     onOpenChange(open);
   };
 
-  if (!editedTask) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Task</DialogTitle>
+          <DialogTitle>Add New Event</DialogTitle>
           <DialogDescription>
-            Modify the details of your task.
+            Enter the details for your new event.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -79,8 +72,9 @@ export function EditDatedTaskDialog({ isOpen, onOpenChange, task, onSave }: Edit
             <Label htmlFor="title" className="text-right">Title</Label>
             <Input
               id="title"
-              value={editedTask.title}
-              onChange={handleChange}
+              placeholder="Event title"
+              value={newEventTitle}
+              onChange={(e) => setNewEventTitle(e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -88,25 +82,37 @@ export function EditDatedTaskDialog({ isOpen, onOpenChange, task, onSave }: Edit
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea
               id="description"
-              value={editedTask.description || ''}
-              onChange={handleChange}
+              placeholder="Description (optional)"
+              value={newEventDescription}
+              onChange={(e) => setNewEventDescription(e.target.value)}
               className="col-span-3"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="importance" className="text-right">Importance</Label>
-            <Select onValueChange={handleImportanceChange} value={editedTask.importance?.toString() || '1'}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Importance" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Low</SelectItem>
-                <SelectItem value="2">Medium-Low</SelectItem>
-                <SelectItem value="3">Medium</SelectItem>
-                <SelectItem value="4">Medium-High</SelectItem>
-                <SelectItem value="5">High</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="col-span-3 flex space-x-2">
+              <Button
+                variant={newEventImportance === 'low' ? 'default' : 'outline'}
+                className={`bg-green-500 hover:bg-green-600 ${newEventImportance === 'low' ? 'border-2 border-blue-500' : ''}`}
+                onClick={() => setNewEventImportance('low')}
+              >
+                Low
+              </Button>
+              <Button
+                variant={newEventImportance === 'medium' ? 'default' : 'outline'}
+                className={`bg-yellow-500 hover:bg-yellow-600 ${newEventImportance === 'medium' ? 'border-2 border-blue-500' : ''}`}
+                onClick={() => setNewEventImportance('medium')}
+              >
+                Medium
+              </Button>
+              <Button
+                variant={newEventImportance === 'high' ? 'default' : 'outline'}
+                className={`bg-red-500 hover:bg-red-600 ${newEventImportance === 'high' ? 'border-2 border-blue-500' : ''}`}
+                onClick={() => setNewEventImportance('high')}
+              >
+                High
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dueDate" className="text-right">Due Date</Label>
@@ -127,7 +133,7 @@ export function EditDatedTaskDialog({ isOpen, onOpenChange, task, onSave }: Edit
                 <Calendar
                   mode="single"
                   selected={dueDate}
-                  onSelect={handleDateSelect}
+                  onSelect={setDueDate}
                   initialFocus
                 />
               </PopoverContent>
@@ -135,7 +141,7 @@ export function EditDatedTaskDialog({ isOpen, onOpenChange, task, onSave }: Edit
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSave}>Save Changes</Button>
+          <Button type="submit" onClick={handleAddEvent}>Add Event</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

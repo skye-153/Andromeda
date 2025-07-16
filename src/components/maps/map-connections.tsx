@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { type Node, type Connection } from '@/lib/types';
+import { type Node, type MapConnection } from '@/lib/types';
 
 interface MapConnectionsProps {
     nodes: Node[];
-    connections: Connection[];
+    connections: MapConnection[];
     linkingState: { active: boolean; from: string | null };
     mousePosition: { x: number; y: number } | null;
     scale: number;

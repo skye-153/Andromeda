@@ -1,9 +1,13 @@
 import { type FileData } from '@/lib/types';
+import { invoke } from '@tauri-apps/api/core';
+import * as shell from '@tauri-apps/api/shell';
+import * as fs from '@tauri-apps/api/fs';
+import * as path from '@tauri-apps/api/path';
 
 interface TauriApi {
-  shell: typeof import('@tauri-apps/api/shell');
-  fs: typeof import('@tauri-apps/api/fs');
-  path: typeof import('@tauri-apps/api/path');
+  shell: typeof shell;
+  fs: typeof fs;
+  path: typeof path;
 }
 
 let tauriApi: TauriApi | null = null;
@@ -14,9 +18,6 @@ async function getTauriApi(): Promise<TauriApi | null> {
   }
 
   if (typeof window !== 'undefined' && window.__TAURI__) {
-    const shell = await import('@tauri-apps/api/' + 'shell');
-    const fs = await import('@tauri-apps/api/' + 'fs');
-    const path = await import('@tauri-apps/api/' + 'path');
     tauriApi = { shell, fs, path };
     return tauriApi;
   }

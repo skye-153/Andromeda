@@ -7,123 +7,157 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { AddDatedTaskDialog } from '@/components/maps/add-dated-task-dialog';
-import { EditDatedTaskDialog } from '@/components/maps/edit-dated-task-dialog';
+import { AddDatedEventDialog } from '@/components/calendar/add-dated-event-dialog';
+import { EditDatedEventDialog } from '@/components/calendar/edit-dated-event-dialog';
 import { Plus, Trash2 } from 'lucide-react';
 import { format, isToday } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
-import { Task } from '@/lib/types';
-import { invoke } from '@tauri-apps/api/core';
+import { ICalendarEvent } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { useSidebar } from '@/components/ui/sidebar';
-import { UndatedTasksPanel } from '@/components/maps/undated-tasks-panel';
+import { UndatedEventsPanel } from '@/components/calendar/undated-events-panel';
+import { calendarService } from '@/services/calendar-service';
+import { initializeLowDb } from '@/lib/lowdb';
 
 export default function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<ICalendarEvent[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [selectedDateTasks, setSelectedDateTasks] = useState<Task[]>([]);
+  const [selectedDateEvents, setSelectedDateEvents] = useState<ICalendarEvent[]>([]);
   const [isAddDatedDialogOpen, setIsAddDatedDialogOpen] = useState(false);
   const [isEditDatedDialogOpen, setIsEditDatedDialogOpen] = useState(false);
-  const [datedTaskToEdit, setDatedTaskToEdit] = useState<Task | null>(null);
+  const [datedEventToEdit, setDatedEventToEdit] = useState<ICalendarEvent | null>(null);
   const { state: sidebarState } = useSidebar();
 
+  const [refetch, setRefetch] = useState(false);
+
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    const initAndFetch = async () => {
+      await initializeLowDb();
+      fetchEvents();
+    };
+    initAndFetch();
+  }, [refetch]);
 
   useEffect(() => {
     if (date) {
       const formattedDate = format(date, 'yyyy-MM-dd');
-      setSelectedDateTasks(tasks.filter(task => task.dueDate === formattedDate && !task.isUndated));
+      setSelectedDateEvents(events.filter(event => event.dueDate === formattedDate && !event.isUndated));
     } else {
-      setSelectedDateTasks([]);
+      setSelectedDateEvents([]);
     }
-  }, [date, tasks]);
+  }, [date, events]);
 
-  const fetchTasks = async () => {
+  const fetchEvents = async () => {
     try {
-      const storedTasks: Task[] = await invoke('get_tasks_command');
-      setTasks(storedTasks);
+      const storedEvents = await calendarService.getEvents();
+      setEvents(storedEvents);
     } catch (error) {
-      console.error('Failed to fetch tasks:', error);
+      console.error('Failed to fetch events:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load tasks.',
+        description: 'Failed to load events.',
         variant: 'destructive',
       });
     }
   };
 
-  const saveTasks = async (updatedTasks: Task[]) => {
+  const handleAddEvent = async (eventDetails: Partial<ICalendarEvent>) => {
     try {
-      await invoke('save_tasks_command', { tasks: updatedTasks });
-      setTasks(updatedTasks);
+      const newEvent = await calendarService.addEvent({
+        title: eventDetails.title || 'New Event',
+        description: eventDetails.description,
+        dueDate: date && !eventDetails.isUndated ? format(date, 'yyyy-MM-dd') : undefined,
+        isCompleted: false,
+        isUndated: eventDetails.isUndated || false,
+        importance: eventDetails.importance,
+      });
+      setEvents(prevEvents => [...prevEvents, newEvent]);
+      if (!newEvent.isUndated && date && newEvent.dueDate === format(date, 'yyyy-MM-dd')) {
+        setSelectedDateEvents(prevSelected => [...prevSelected, newEvent]);
+      }
+      if (!newEvent.isUndated) {
+        setIsSheetOpen(false);
+      }
+      toast({
+        title: 'Success',
+        description: 'Event added successfully!',
+      });
+      setRefetch(prev => !prev);
     } catch (error) {
-      console.error('Failed to save tasks:', error);
+      console.error('Failed to add event:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save tasks.',
+        description: 'Failed to add event.',
         variant: 'destructive',
       });
     }
   };
 
-  const handleAddTask = (taskDetails: Partial<Task>) => {
-    const newTask: Task = {
-      id: uuidv4(),
-      title: taskDetails.title || 'New Task',
-      description: taskDetails.description,
-      dueDate: date && !taskDetails.isUndated ? format(date, 'yyyy-MM-dd') : undefined,
-      isCompleted: false,
-      isUndated: taskDetails.isUndated || false,
-      importance: taskDetails.importance,
-    };
-
-    const updatedTasks = [...tasks, newTask];
-    saveTasks(updatedTasks);
-    if (!newTask.isUndated) {
-      setIsSheetOpen(false);
+    const handleToggleComplete = async (id: string) => {
+    const eventToUpdate = events.find(event => event.id === id);
+    if (eventToUpdate) {
+      const updatedEvent = { ...eventToUpdate, isCompleted: !eventToUpdate.isCompleted };
+      await calendarService.updateEvent(updatedEvent);
+      setEvents(prevEvents =>
+        prevEvents.map(event => (event.id === id ? updatedEvent : event))
+      );
     }
-    toast({
-      title: 'Success',
-      description: 'Task added successfully!',
-    });
   };
 
-  const handleToggleComplete = (id: string) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === id ? { ...task, isCompleted: !task.isCompleted } : task
-    );
-    saveTasks(updatedTasks);
+  const handleDeleteEvent = async (id: string) => {
+    try {
+      const success = await calendarService.deleteEvent(id);
+      if (success) {
+        setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
+        toast({
+          title: 'Success',
+          description: 'Event deleted successfully!',
+        });
+        setRefetch(prev => !prev);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete event.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete event.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleDeleteTask = (id: string) => {
-    const updatedTasks = tasks.filter(task => task.id !== id);
-    saveTasks(updatedTasks);
-    toast({
-      title: 'Success',
-      description: 'Task deleted successfully!',
-    });
+  const handleEditEvent = async (updatedEvent: ICalendarEvent) => {
+    try {
+      await calendarService.updateEvent(updatedEvent);
+      setEvents(prevEvents =>
+        prevEvents.map(event => (event.id === updatedEvent.id ? updatedEvent : event))
+      );
+      toast({
+        title: 'Success',
+        description: 'Event updated successfully!',
+      });
+      setRefetch(prev => !prev);
+    } catch (error) {
+      console.error('Failed to edit event:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to edit event.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleEditTask = (updatedTask: Task) => {
-    const updatedTasks = tasks.map(task =>
-      task.id === updatedTask.id ? updatedTask : task
-    );
-    saveTasks(updatedTasks);
-    toast({
-      title: 'Success',
-      description: 'Task updated successfully!',
-    });
-  };
-
-  const handleEditDatedTaskClick = (task: Task) => {
-    setDatedTaskToEdit(task);
+  const handleEditDatedEventClick = (event: ICalendarEvent) => {
+    setDatedEventToEdit(event);
     setIsEditDatedDialogOpen(true);
   };
 
-  const undatedTasks = tasks.filter(task => task.isUndated);
+  const undatedEvents = events.filter(event => event.isUndated);
 
   return (
     <div className="flex h-full w-full">
@@ -158,7 +192,7 @@ export default function CalendarPage() {
               components={{
                 Day: ({ date: dayDate, ...props }) => {
                   const formattedDayDate = format(dayDate, 'yyyy-MM-dd');
-                  const tasksForDay = tasks.filter(task => task.dueDate === formattedDayDate && !task.isUndated);
+                  const eventsForDay = events.filter(event => event.dueDate === formattedDayDate && !event.isUndated);
                   const maxTitleLength = 10; // Adjust as needed for desired truncation
 
                   return (
@@ -174,17 +208,17 @@ export default function CalendarPage() {
                       }}
                     >
                       <span className="text-xl font-medium">{format(dayDate, 'd')}</span>
-                      {tasksForDay.length > 0 && (
+                      {eventsForDay.length > 0 && (
                         <div className="mt-1 flex flex-col items-center w-full">
-                          {tasksForDay.map(task => (
+                          {eventsForDay.map(event => (
                             <span
-                              key={task.id}
-                              className={`text-sm px-1 rounded-full ${task.isCompleted ? 'bg-green-500' : 'bg-blue-500'} text-white truncate w-full text-center`}
-                              title={task.title} // Show full title on hover
+                              key={event.id}
+                              className={`text-sm px-1 rounded-full ${event.isCompleted ? 'bg-green-500 opacity-50 line-through' : (event.importance === 'low' ? 'bg-green-500' : event.importance === 'medium' ? 'bg-yellow-500' : event.importance === 'high' ? 'bg-red-500' : 'bg-blue-500')} text-white truncate w-full text-center`}
+                              title={event.title} // Show full title on hover
                             >
-                              {task.title.length > maxTitleLength
-                                ? `${task.title.substring(0, maxTitleLength)}...`
-                                : task.title}
+                              {event.title.length > maxTitleLength
+                                ? `${event.title.substring(0, maxTitleLength)}...`
+                                : event.title}
                             </span>
                           ))}
                         </div>
@@ -199,38 +233,44 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Task Sheet for Selected Date */}
+      {/* Event Sheet for Selected Date */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="right" className="w-80 sm:w-[400px]">
           <SheetHeader>
-            <SheetTitle>Tasks for {date ? format(date, 'PPP') : 'Selected Date'}</SheetTitle>
+            <SheetTitle>Events for {date ? format(date, 'PPP') : 'Selected Date'}</SheetTitle>
           </SheetHeader>
           <div className="py-4">
             <Button onClick={() => setIsAddDatedDialogOpen(true)} className="w-full mb-4">
-              <Plus className="mr-2 h-4 w-4" /> Add Task
+              <Plus className="mr-2 h-4 w-4" /> Add Event
             </Button>
 
-            <h3 className="text-lg font-semibold mb-2">Existing Tasks</h3>
-            {selectedDateTasks.length === 0 ? (
-              <p>No tasks for this date.</p>
+            <h3 className="text-lg font-semibold mb-2">Existing Events</h3>
+            {selectedDateEvents.length === 0 ? (
+              <p>No events for this date.</p>
             ) : (
               <ul className="space-y-2">
-                {selectedDateTasks.map(task => (
-                  <li key={task.id} className="flex items-center justify-between bg-card p-3 rounded-md shadow-sm cursor-pointer" onClick={() => handleEditDatedTaskClick(task)}>
+                {selectedDateEvents.map(event => (
+                  <li key={event.id} className="flex items-center justify-between bg-card p-3 rounded-md shadow-sm cursor-pointer">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`task-${task.id}`}
-                        checked={task.isCompleted}
-                        onCheckedChange={() => handleToggleComplete(task.id)}
+                        id={`event-${event.id}`}
+                        checked={event.isCompleted}
+                        onCheckedChange={(checked) => {
+                          if (typeof checked === 'boolean') {
+                            handleToggleComplete(event.id);
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <Label
-                        htmlFor={`task-${task.id}`}
-                        className={task.isCompleted ? 'line-through text-muted-foreground' : ''}
+                        htmlFor={`event-${event.id}`}
+                        className={event.isCompleted ? 'line-through text-muted-foreground' : ''}
+                        onClick={() => handleEditDatedEventClick(event)}
                       >
-                        {task.title}
+                        {event.title}
                       </Label>
                     </div>
-                    <Button variant="destructive" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>
+                    <Button variant="destructive" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </li>
@@ -241,33 +281,33 @@ export default function CalendarPage() {
         </SheetContent>
       </Sheet>
 
-      <AddDatedTaskDialog
+      <AddDatedEventDialog
         isOpen={isAddDatedDialogOpen}
         onOpenChange={setIsAddDatedDialogOpen}
-        onAddTask={handleAddTask}
+        onAddEvent={handleAddEvent}
         initialDate={date}
       />
 
-      <EditDatedTaskDialog
+      <EditDatedEventDialog
         isOpen={isEditDatedDialogOpen}
         onOpenChange={setIsEditDatedDialogOpen}
-        task={datedTaskToEdit}
-        onSave={handleEditTask}
+        event={datedEventToEdit}
+        onSave={handleEditEvent}
       />
 
-      {/* Undated Tasks Panel */}
+      {/* Undated Events Panel */}
       <div
         className={`transition-all duration-300 ease-in-out ${
           sidebarState === 'collapsed' ? 'w-80 p-4 border-l' : 'w-0'
         } overflow-hidden`}
       >
         {sidebarState === 'collapsed' && (
-          <UndatedTasksPanel
-            tasks={undatedTasks}
-            onAddTask={handleAddTask}
+          <UndatedEventsPanel
+            events={undatedEvents}
+            onAddEvent={handleAddEvent}
             onToggleComplete={handleToggleComplete}
-            onDeleteTask={handleDeleteTask}
-            onEditTask={handleEditTask}
+            onDeleteEvent={handleDeleteEvent}
+            onEditEvent={handleEditEvent}
           />
         )}
       </div>

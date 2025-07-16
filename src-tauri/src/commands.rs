@@ -1,8 +1,9 @@
-use super::{write_data, AppData, AppState, Connection, MapData, Node, Task};
+use super::{write_maps_data, write_calendar_data, AppState, Connection, MapData, Node, Task, NewTask};
 use tauri::{command, AppHandle, Manager, State};
 use tauri_plugin_opener::open_path;
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
+use uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileData {
@@ -59,7 +60,7 @@ pub fn create_map(name: String, state: State<AppState>, app_handle: AppHandle) -
         connections: vec![],
     };
     data.maps.push(new_map.clone());
-    write_data(&app_handle, &data);
+    write_maps_data(&app_handle, &data.maps);
     Ok(new_map)
 }
 
@@ -81,7 +82,7 @@ pub fn update_map(
     if let Some(map) = data.maps.iter_mut().find(|m| m.id == id) {
         map.nodes = nodes;
         map.connections = connections;
-        write_data(&app_handle, &data);
+        write_maps_data(&app_handle, &data.maps);
         Ok(())
     } else {
         Err("Map not found".to_string())
@@ -92,7 +93,7 @@ pub fn update_map(
 pub fn delete_map(id: String, state: State<AppState>, app_handle: AppHandle) -> Result<(), String> {
     let mut data = state.0.lock().unwrap();
     data.maps.retain(|m| m.id != id);
-    write_data(&app_handle, &data);
+    write_maps_data(&app_handle, &data.maps);
     Ok(())
 }
 
@@ -107,7 +108,7 @@ pub fn rename_map(
     if let Some(map) = data.maps.iter_mut().find(|m| m.id == id) {
         map.name = new_name;
         let map_clone = map.clone();
-        write_data(&app_handle, &data);
+        write_maps_data(&app_handle, &data.maps);
         Ok(map_clone)
     } else {
         Err("Map not found".to_string())
@@ -124,6 +125,52 @@ pub fn get_tasks_command(state: State<AppState>) -> Result<Vec<Task>, String> {
 pub fn save_tasks_command(tasks: Vec<Task>, state: State<AppState>, app_handle: AppHandle) -> Result<(), String> {
     let mut data = state.0.lock().unwrap();
     data.tasks = tasks;
-    write_data(&app_handle, &data);
+    write_calendar_data(&app_handle, &data.tasks);
     Ok(())
+}
+
+#[command]
+pub fn get_all_calendar_events_command(state: State<AppState>) -> Result<Vec<Task>, String> {
+    let data = state.0.lock().unwrap();
+    Ok(data.tasks.clone())
+}
+
+#[command]
+pub fn add_calendar_event_command(event: NewTask, state: State<AppState>, app_handle: AppHandle) -> Result<Task, String> {
+    println!("Received new event: {:?}", event);
+    let mut data = state.0.lock().unwrap();
+    let new_event = Task {
+        id: uuid::Uuid::new_v4().to_string(),
+        title: event.title,
+        description: event.description,
+        due_date: event.due_date,
+        is_completed: event.is_completed,
+        is_undated: event.is_undated,
+        importance: event.importance,
+    };
+    println!("Saving new event: {:?}", new_event);
+    data.tasks.push(new_event.clone());
+    write_calendar_data(&app_handle, &data.tasks);
+    Ok(new_event)
+}
+
+#[command]
+pub fn update_calendar_event_command(event: Task, state: State<AppState>, app_handle: AppHandle) -> Result<Task, String> {
+    let mut data = state.0.lock().unwrap();
+    if let Some(task) = data.tasks.iter_mut().find(|t| t.id == event.id) {
+        *task = event.clone();
+        write_calendar_data(&app_handle, &data.tasks);
+        Ok(event)
+    } else {
+        Err("Event not found".to_string())
+    }
+}
+
+#[command]
+pub fn delete_calendar_event_command(id: String, state: State<AppState>, app_handle: AppHandle) -> Result<bool, String> {
+    let mut data = state.0.lock().unwrap();
+    let initial_len = data.tasks.len();
+    data.tasks.retain(|t| t.id != id);
+    write_calendar_data(&app_handle, &data.tasks);
+    Ok(data.tasks.len() < initial_len)
 }

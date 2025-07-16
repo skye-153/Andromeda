@@ -5,7 +5,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileData {
@@ -61,12 +61,26 @@ pub struct Task {
     pub id: String,
     pub title: String,
     pub description: Option<String>,
+    #[serde(rename = "dueDate")]
     pub due_date: Option<String>,
     #[serde(rename = "isCompleted")]
     pub is_completed: bool,
     #[serde(rename = "isUndated")]
     pub is_undated: bool,
-    pub importance: Option<i32>,
+    pub importance: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NewTask {
+    pub title: String,
+    pub description: Option<String>,
+    #[serde(rename = "dueDate")]
+    pub due_date: Option<String>,
+    #[serde(rename = "isCompleted")]
+    pub is_completed: bool,
+    #[serde(rename = "isUndated")]
+    pub is_undated: bool,
+    pub importance: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -77,69 +91,97 @@ pub struct AppData {
 
 pub struct AppState(pub Mutex<AppData>);
 
-fn get_data_path(app_handle: &AppHandle) -> PathBuf {
+fn get_maps_data_path(app_handle: &AppHandle) -> PathBuf {
     let path = app_handle.path().app_data_dir().unwrap();
     if !path.exists() {
         fs::create_dir_all(&path).unwrap();
     }
-    path.join("andromeda.json")
+    path.join("maps.json")
+}
+
+fn get_calendar_data_path(app_handle: &AppHandle) -> PathBuf {
+    let path = app_handle.path().app_data_dir().unwrap();
+    if !path.exists() {
+        fs::create_dir_all(&path).unwrap();
+    }
+    path.join("calendar.json")
+}
+
+fn read_maps_data(app_handle: &AppHandle) -> Vec<MapData> {
+    let path = get_maps_data_path(app_handle);
+    if !path.exists() {
+        let default_maps = vec![MapData {
+            id: "1".to_string(),
+            name: "Getting Started".to_string(),
+            nodes: vec![
+                Node {
+                    id: "node-1".to_string(),
+                    title: "Welcome to Idea Map!".to_string(),
+                    description: "This is your first node. You can edit it by clicking on it."
+                        .to_string(),
+                    position: Position { x: 100.0, y: 100.0 },
+                    links: vec![],
+                    files: vec![],
+                    is_done: Some(false),
+                    size: Some("100%".to_string()),
+                    color: Some("#090f29".to_string()),
+                },
+                Node {
+                    id: "node-2".to_string(),
+                    title: "Create Your Own Nodes".to_string(),
+                    description: "Add more nodes to build your map. Click \"Add Node\" to start.".to_string(),
+                    position: Position { x: 400.0, y: 250.0 },
+                    links: vec![],
+                    files: vec![],
+                    is_done: Some(true),
+                    size: Some("100%".to_string()),
+                    color: Some("#090f29".to_string()),
+                },
+            ],
+            connections: vec![Connection {
+                id: "conn-1".to_string(),
+                from: "node-1".to_string(),
+                to: "node-2".to_string(),
+            }],
+        }];
+        write_maps_data(app_handle, &default_maps);
+        return default_maps;
+    }
+
+    let file = File::open(&path).unwrap();
+    serde_json::from_reader(file).unwrap_or_else(|_| vec![])
+}
+
+fn read_calendar_data(app_handle: &AppHandle) -> Vec<Task> {
+    let path = get_calendar_data_path(app_handle);
+    if !path.exists() {
+        let default_tasks: Vec<Task> = vec![];
+        write_calendar_data(app_handle, &default_tasks);
+        return default_tasks;
+    }
+
+    let file = File::open(&path).unwrap();
+    serde_json::from_reader(file).unwrap_or_else(|_| vec![])
+}
+
+fn write_maps_data(app_handle: &AppHandle, maps: &Vec<MapData>) {
+    let path = get_maps_data_path(app_handle);
+    let mut file = File::create(path).unwrap();
+    let json_data = serde_json::to_string_pretty(maps).unwrap();
+    file.write_all(json_data.as_bytes()).unwrap();
+}
+
+fn write_calendar_data(app_handle: &AppHandle, tasks: &Vec<Task>) {
+    let path = get_calendar_data_path(app_handle);
+    let mut file = File::create(path).unwrap();
+    let json_data = serde_json::to_string_pretty(tasks).unwrap();
+    file.write_all(json_data.as_bytes()).unwrap();
 }
 
 fn read_data(app_handle: &AppHandle) -> AppData {
-    let path = get_data_path(app_handle);
-    if !path.exists() {
-        let default_data = AppData {
-            maps: vec![MapData {
-                id: "1".to_string(),
-                name: "Getting Started".to_string(),
-                nodes: vec![
-                    Node {
-                        id: "node-1".to_string(),
-                        title: "Welcome to Idea Map!".to_string(),
-                        description: "This is your first node. You can edit it by clicking on it."
-                            .to_string(),
-                        position: Position { x: 100.0, y: 100.0 },
-                        links: vec![],
-                        files: vec![],
-                        is_done: Some(false),
-                        size: Some("100%".to_string()),
-                        color: Some("#ffffff".to_string()),
-                    },
-                    Node {
-                        id: "node-2".to_string(),
-                        title: "Create Your Own Nodes".to_string(),
-                        description: "Add more nodes to build your map. Click \"Add Node\" to start.".to_string(),
-                        position: Position { x: 400.0, y: 250.0 },
-                        links: vec![],
-                        files: vec![],
-                        is_done: Some(true),
-                        size: Some("100%".to_string()),
-                        color: Some("#ffffff".to_string()),
-                    },
-                ],
-                connections: vec![Connection {
-                    id: "conn-1".to_string(),
-                    from: "node-1".to_string(),
-                    to: "node-2".to_string(),
-                }],
-            }],
-            tasks: vec![],
-        };
-        let mut file = File::create(&path).unwrap();
-        file.write_all(serde_json::to_string_pretty(&default_data).unwrap().as_bytes())
-            .unwrap();
-        return default_data;
-    }
-
-    let file = File::open(path).unwrap();
-    serde_json::from_reader(file).unwrap_or_else(|_| AppData { maps: vec![], tasks: vec![] })
-}
-
-fn write_data(app_handle: &AppHandle, data: &AppData) {
-    let path = get_data_path(app_handle);
-    let mut file = File::create(path).unwrap();
-    file.write_all(serde_json::to_string_pretty(data).unwrap().as_bytes())
-        .unwrap();
+    let maps = read_maps_data(app_handle);
+    let tasks = read_calendar_data(app_handle);
+    AppData { maps, tasks }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -169,7 +211,11 @@ pub fn run() {
             commands::delete_map,
             commands::rename_map,
             commands::get_tasks_command,
-            commands::save_tasks_command
+            commands::save_tasks_command,
+            commands::get_all_calendar_events_command,
+            commands::add_calendar_event_command,
+            commands::update_calendar_event_command,
+            commands::delete_calendar_event_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
