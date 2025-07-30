@@ -2,7 +2,7 @@
 
 **Andromeda** is a powerful yet lightweight **desktop manager and planner app** that runs fully **locally** on your system. Built using modern technologies like **Next.js**, **React**, **Node.js**, **Tauri**, and **Lowdb**.
 
-[➡️ **Download Andromeda**][https://github.com/skye-153/Andromeda/releases]
+[➡️ **Download Andromeda**](https://github.com/skye-153/Andromeda/releases)
 ---
 
 ## ✨ Features
