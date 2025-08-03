@@ -16,7 +16,10 @@
         "width": 1000,
         "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "visible": true,
+        "decorations": true,
+        "transparent": false
       }
     ],
     "security": {
@@ -30,5 +33,10 @@
       "icons/icon.png",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
   }
 }

@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-shell';
 import {
   Select,
   SelectContent,
@@ -234,14 +235,33 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
       onDelete(node.id);
   }
 
+  const handleOpenLink = async (url: string) => {
+    try {
+      if ((window as any).__TAURI__) {
+        await open(url);  // Simplified call, no need for options
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="md:max-w-3xl lg:max-w-4xl w-[90vw] flex flex-col left-1/2 transform -translate-x-1/2 right-auto">
+      <SheetContent
+        className="
+          w-full max-w-full sm:max-w-lg md:max-w-3xl lg:max-w-4xl
+          left-1/2 transform -translate-x-1/2 right-auto
+          h-full max-h-screen flex flex-col
+        "
+        style={{ maxWidth: '100vw', width: '100vw', height: '100vh', maxHeight: '100vh' }}
+      >
         <SheetHeader className="px-6 pt-6">
           <SheetTitle>Edit Node</SheetTitle>
           <SheetDescription>Update node properties. Click save when you're done.</SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 w-full max-w-full">
           <div className="space-y-2">
             <Label htmlFor="title">Node Title</Label>
             <Input id="title" name="title" value={formData.title} onChange={handleChange} />
@@ -299,10 +319,10 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
             />
           </div>
           <div className="space-y-4">
-              <Label>YouTube Links</Label>
+              <Label>Links</Label>
               <form onSubmit={(e) => { e.preventDefault(); handleAddLink(); }} className="flex gap-2">
                   <Input 
-                    placeholder="https://youtube.com/watch?v=..."
+                    placeholder="https://example.com"
                     value={newLink}
                     onChange={(e) => setNewLink(e.target.value)}
                     type="url"
@@ -313,7 +333,13 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
                   {formData.links.map((link, i) => (
                       <li key={i} className="flex items-center justify-between text-sm bg-secondary p-2 rounded-md">
                           <LinkIcon className="h-4 w-4 mr-2 shrink-0 text-muted-foreground"/>
-                          <span className="truncate flex-1">{link}</span>
+                          <span
+                            className="truncate flex-1 text-primary underline hover:text-blue-600 transition-colors cursor-pointer"
+                            title={link}
+                            onClick={() => handleOpenLink(link)}
+                          >
+                            {link}
+                          </span>
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveLink(link)}>
                               <X className="h-4 w-4"/>
                           </Button>
@@ -416,7 +442,7 @@ export function NodeEditor({ isOpen, onOpenChange, node, onUpdate, onDelete }: N
             )}
           </div>
         </div>
-        <SheetFooter className="p-6 flex justify-between items-center bg-background border-t">
+        <SheetFooter className="p-4 sm:p-6 flex justify-between items-center bg-background border-t w-full max-w-full">
           <AlertDialog>
             <AlertDialogTrigger asChild>
                 <Button variant="destructive">
