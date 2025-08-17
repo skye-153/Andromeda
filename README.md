@@ -20,10 +20,10 @@
 - **Backend:** Node.js, Lowdb  
 - **Desktop Runtime:** Tauri
 
-📄 License
+## 📄 License
 MIT License
 
-👤 Author
+## 👤 Author
 Made by Prabhav (skye-153) - 
 www.linkedin.com/in/prabhav-chanakya-boddu-aa3280319
 
