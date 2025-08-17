@@ -4,7 +4,7 @@ import Starfield from '@/components/landing/starfield';
 
 export default function LandingPage() {
   return (
-    <div className="bg-background h-screen w-screen relative overflow-hidden">
+    <div className="bg-background h-screen w-full relative overflow-hidden">
       <Starfield />
       <main className="absolute inset-0 z-10 flex flex-col items-center justify-center">
         <div className="relative text-center">
